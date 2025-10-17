@@ -1,0 +1,140 @@
+  --	What is the Open_rate per campaigns?
+SELECT
+
+ROUND(SUM(total_opens)*100.0/ SUM(total_sent),2) AS Open_rate
+
+FROM 
+
+Campaign_Performance;
+
+--What is the Overall_unsubscribe_rate?
+
+SELECT
+
+ROUND(SUM(total_unsubscribes)*100.0/ SUM(total_sent),2) AS Unsubscribe_rate
+
+FROM 
+
+Campaign_Performance;
+  
+--Which Campaign has the heighest and Lowest Unsubscribe_rate?
+
+SELECT 
+ Campaigns.campaign_name,
+ ROUND(SUM(total_unsubscribes)*100.0/ SUM(total_sent),2) AS Unsubscribe_rate
+ 
+ FROM
+ Campaign_Performance
+ LEFT JOIN 
+ Campaigns ON Campaign_Performance.campaign_id=Campaigns.campaign_id
+ GROUP BY 
+ campaign_name
+ ORDER BY
+ unsubscribe_rate DESC;
+ 
+ --Do certain campaign categories (promotion, newsletter, re-engagement, announcement) have higher unsubscribe rates?
+ 
+ SELECT
+ 
+ Campaigns.category,
+ ROUND(SUM(total_unsubscribes)*100.0/ SUM(total_sent),2) AS Unsubscribe_rate
+ 
+ FROM
+ Campaign_Performance
+ LEFT JOIN 
+ Campaigns ON Campaign_Performance.campaign_id=Campaigns.campaign_id
+ GROUP BY 
+ category
+ ORDER BY
+ unsubscribe_rate DESC;
+ 
+ --What is the relation between Open_rate and Unsubscribe_rate?
+ 
+ SELECT 
+ 
+ Campaigns.campaign_name,
+ ROUND(SUM(total_unsubscribes)*100.0/ SUM(total_sent),2) AS Unsubscribe_rate,
+ ROUND(SUM(total_opens)*100.0/ SUM(total_sent),2) AS Open_rate
+ 
+ FROM
+ Campaign_Performance
+ LEFT JOIN 
+ Campaigns ON Campaign_Performance.campaign_id=Campaigns.campaign_id
+ GROUP BY 
+ campaign_name
+ ORDER BY
+ Unsubscribe_rate DESC;
+ 
+ --Which region(s) or device type(s) have the highest unsubscribe rate?
+ 
+ SELECT
+ region,
+ device_type,
+  SUM(unsubscribe) AS Unsubscribe_rate
+  
+ FROM
+ Users
+ LEFT JOIN
+ Email_Engagement ON users.user_id=Email_Engagement.user_id
+ GROUP BY
+ region
+ ORDER BY
+ Unsubscribe_rate DESC;
+ 
+ --How long after signup do users typically unsubscribe?
+ 
+ SELECT
+ 
+ ROUND(AVG(JULIANDAY(Unsubscribes.unsubscribe_date)- JULIANDAY(users.signup_date)),1) AS Avg_days_to_unsubscribe
+ 
+ FROM 
+ Users
+ LEFT JOIN
+ Unsubscribes ON users.user_id=Unsubscribes.user_id;
+ 
+ --Do send time(hour of the day) affect engagement or unsubcribe rate?
+ 
+ SELECT
+ 
+ send_hour,
+ ROUND(SUM(total_opens)*100.0/ SUM(total_sent),2) AS Open_rate,
+ ROUND(SUM(total_unsubscribes)*100.0/ SUM(total_sent),2) AS Unsubscribe_rate
+ 
+ FROM
+ Campaign_Performance
+ LEFT JOIN
+ Campaigns ON Campaign_Performance.campaign_id=Campaigns.campaign_id
+ GROUP BY
+ send_hour;
+ 
+ --What are the most common unsubscribe reasons, and do they vary by campaign category?
+ 
+ SELECT 
+ 
+ Campaigns.category,
+ Unsubscribes.reason,
+ COUNT(*) AS total_unsubscribes
+ 
+ FROM 
+ Unsubscribes
+ LEFT JOIN
+ Campaigns ON Unsubscribes.campaign_id=Campaigns.campaign_id
+ GROUP BY 
+ category,reason
+ ORDER BY 
+ total_unsubscribes DESC;
+
+ -- Who is "at-risk" users?
+ 
+ SELECT 
+    user_id,
+    COUNT(campaign_id) AS total_sent,
+    SUM(opened) AS total_opened,
+    ROUND(
+      SUM(opened) * 100.0 / COUNT(campaign_id),
+      2
+    ) AS open_rate
+FROM email_engagement
+GROUP BY user_id;
+
+ 
